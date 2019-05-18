@@ -6,7 +6,8 @@ ASM_FLAGS = -C --ascii
 TEST_PRGS = show_reduced_bitmap.prg show_final_charset.prg
 
 
-all: $(TEST_PRGS)
+all: $(TEST_PRGS) intro.prg
+
 
 data/nw-wwe-font.bmp.prg: make-logo.py
 	python3 ./make-logo.py
@@ -25,6 +26,9 @@ show_final_charset.prg: src/show_final_charset.s \
 
 logo: data/nw-font-bitmap.prg
 	python3 ./make-logo.py
+
+intro.prg: src/main.s
+	$(ASM) $(ASM_FLAGS) $< -o $@
 
 
 .PHONY: clean

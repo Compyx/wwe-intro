@@ -1,3 +1,9 @@
 *.swp
 *~
+data/nw-wwe-font.bmp.prg
+data/nw-wwe-font.charset.prg
+data/nw-wwe-font.screen.prg
+intro.prg
+show_final_charset.prg
+show_reduced_bitmap.prg
 
