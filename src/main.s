@@ -140,7 +140,7 @@ irq2
         jsr open_border
         lda #$0c
         sta $d020
-        lda #$0b
+        lda #$00
         sta $d021
 
         dec $d020
@@ -223,10 +223,8 @@ thirdx  lda #$70
 
 setup
         ldx #$3f
-        lda #$33
+        lda #$00
 -       sta $0340,x
-        eor #$ff
-        sta $0380,x
         dex
         bpl -
 
@@ -368,8 +366,8 @@ ob_normal_debug
         nop             ; 2
         nop             ; 2
         nop             ; 2
-        sta $d021       ; 4
-        stx $d021       ; 4
+        sta $d013       ; 4
+        stx $d013       ; 4
         rts             ; 6
                         ;----
                         ; 46
@@ -406,10 +404,10 @@ ob_pre_badline_debug    ; fix this
         nop
         nop
         nop
-        sty $d021
-        sty $d021
-        sta $d016,y     ; add 1 cycle to get 9
-        stx $d016
+        sta $d013
+        stx $d013
+        sta $d013,y     ; add 1 cycle to get 9
+        stx $d013
         rts
 
 
