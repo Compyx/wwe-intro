@@ -27,7 +27,7 @@ show_final_charset.prg: src/show_final_charset.s \
 logo: data/nw-font-bitmap.prg
 	python3 ./make-logo.py
 
-intro.prg: src/main.s
+intro.prg: src/main.s data/nw-wwe-sprites.prg
 	$(ASM) $(ASM_FLAGS) $< -o $@
 
 

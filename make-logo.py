@@ -27,6 +27,9 @@ class LogoConverter(object):
 
     DST_CHARSET_FILE = 'data/nw-wwe-font.charset.prg'
     DST_SCREEN_FILE = 'data/nw-wwe-font.screen.prg'
+    DST_SPRITES = 'data/nw-wwe-font.sprites.prg'
+
+    SPR_Y_OFFSET = 1
 
     # letters in the font used for the WWE charset/sprites
     #
@@ -44,6 +47,10 @@ class LogoConverter(object):
                 'x': (15, 0, 6)
     }
 
+    SPR_XPOS = [0x00, 0x01, 0x02, 0x40, 0x41, 0x42, 0x80, 0x81, 0x82,
+                0xc0, 0xc1, 0xc2
+    ]
+
 
     def __init__(self, debug=True):
         """
@@ -58,6 +65,7 @@ class LogoConverter(object):
         self.dst_bitmap = bytearray(self.DST_WIDTH_BITMAP * self.DST_HEIGHT_CHARS)
         self.dst_charset = bytearray(0x800)
         self.dst_screen = bytearray(0x3e8)
+        self.dst_sprites = bytearray(4 * 2 * 64)
 
         if self.debug:
             print("Converting 'Not Worthy' font:")
@@ -168,6 +176,45 @@ class LogoConverter(object):
         self.write_prg_file(self.DST_SCREEN_FILE, self.dst_screen, 0x1c00)
 
 
+    def copy_sprite_column(self, src_col, dst_col):
+        """
+        Copy char row from bitmap into sprite
+        """
+
+        # column
+        src = src_col * 8
+
+        for y in range(40):
+
+            offset = (int)(y / 8) * self.DST_WIDTH_CHARS * 8 + (y & 0x07)
+
+            if y < 20:
+                dst = self.SPR_XPOS[dst_col] + y * 3
+            else:
+                dst = self.SPR_XPOS[dst_col] + 0x100 + ((y - 20) * 3)
+
+            print("y: {}, dst = {}, src = {}, src-offset = {}".format(
+                y, dst, src, offset))
+            print("${:04x} = ${:04x}: {:02x}".format(dst, src+offset,
+                self.dst_bitmap[src + offset]))
+            self.dst_sprites[dst + 3] = self.dst_bitmap[src + offset]
+
+
+
+    def create_sprites(self):
+        """
+        Generate sprites:
+
+        1 char of 'w', 3 chars of 'w' for the left border, 3 chars of 'e' amd
+        1 char of 'e' for the right border for 'world wide'.
+        """
+
+        for s, d in [(40, 2), (41, 3), (42,4), (43, 5),
+                     (5, 6), (6, 7), (7, 8), (8, 9)]:
+            self.copy_sprite_column(s, d)
+
+        self.write_prg_file('data/nw-wwe-sprites.prg', self.dst_sprites, 0x2000)
+
 
     def convert(self):
         """
@@ -175,6 +222,7 @@ class LogoConverter(object):
         """
         self.reduce_bitmap()
         self.create_charset()
+        self.create_sprites()
 
 
 
