@@ -304,11 +304,40 @@ open_border
                         ; = 18
 
         ldy #1
-        nop
+        lda #$10
         jsr ob_normal+2
+
         jsr ob_normal
+
+        ; -JSR = -6
+
+        ; 6*4  = +24
+        ldy #$c4
+        sty $07fc
+        iny
+        sty $07fd
+        iny
+        sty $07fe
+        iny
+        sty $07ff
+
+        nop     ; +6 for JSR
+        nop
+        nop
+
+        nop
+        nop
+        nop
+        nop
+        sta $d016
+        stx $d016
+        nop
+        nop
+        nop     ; +6 for RTS
+
+
         jsr ob_normal
-        jsr ob_normal
+        ;jsr ob_normal
         jsr ob_normal
         jsr ob_normal
         jsr ob_pre_badline

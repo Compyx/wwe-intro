@@ -38,3 +38,4 @@ clean:
 	rm -f data/nw-wwe-font.screen.prg
 	rm -f show_reduced_bitmap.prg
 	rm -f show_final_charset.prg
+	rm -f intro.prg

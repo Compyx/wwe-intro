@@ -191,7 +191,7 @@ class LogoConverter(object):
             if y < 20:
                 dst = self.SPR_XPOS[dst_col] + y * 3
             else:
-                dst = self.SPR_XPOS[dst_col] + 0x100 + ((y - 20) * 3)
+                dst = self.SPR_XPOS[dst_col] + 0x100 + ((y - 21) * 3)
 
             print("y: {}, dst = {}, src = {}, src-offset = {}".format(
                 y, dst, src, offset))
