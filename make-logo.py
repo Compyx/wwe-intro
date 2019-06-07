@@ -130,7 +130,7 @@ class LogoConverter(object):
 
         offset = 0
 
-        for letter in self.LETTERS.keys():
+        for letter in sorted(self.LETTERS.keys()):
             (row, col, width) = self.LETTERS[letter]
             self.copy_bitmap_letter(row, col, offset, width)
             offset += width
