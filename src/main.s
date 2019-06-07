@@ -276,7 +276,10 @@ open_border
         nop     ; 2
         ;nop
         ;bit $ea
-        jsr ob_pre_badline_debug
+        ;jsr ob_pre_badline_debug        ; 55 cycles + 6 for JSR
+        ldy #12 ;2
+-       dey
+        bne -   ; 11 * 5 + 4
 
         jsr ob_pre_badline
         jsr ob_normal
@@ -398,17 +401,20 @@ ob_pre_badline
         rts
 
 ob_pre_badline_debug    ; fix this
-        ldy #5
+        ldy #5          ; 2
 -       dey
-        bne -
-        nop
-        nop
-        nop
-        sta $d013
-        stx $d013
-        sta $d013,y     ; add 1 cycle to get 9
-        stx $d013
-        rts
+        bne -           ; 4 * 5 + 4
+                        ; = 26
+
+        nop             ; 2
+        nop             ; 2
+        nop             ; 2
+        sta $d021       ; 4
+        stx $d021       ; 4
+        sta $d021,y     ; 5
+        stx $d021       ; 4
+        rts             ; 6
+                        ; = 
 
 
 make_logo .proc
@@ -474,28 +480,6 @@ more
 
         rts
 
-scroll .proc
-delay   lda #3
-        beq okay
-        dec delay + 1
-        rts
-okay
-        lda #3
-        sta delay + 1
-pos     lda #$00
-        ora #$70
-        sta thirdx + 1
-
-        lda pos + 1
-        sec
-        sbc #1
-        and #7
-        sta pos + 1
-        rts
-.pend
-
-
-
 
 letter_data     ; offset, width
         .byte 0, 5      ;  0 = d
@@ -553,26 +537,3 @@ screen_data
         * = $3000
 .binary "../data/nw-wwe-sprites.prg", 2
 
-
-
-
-
-render_sb_char .macro
-
-        ldx $1000 + \1
-        lda $1100,x
-        sta $10
-        lda $1200,x
-        sta $11
-
-
-        ldy #0
-.for row = 0, row < 8, row += 1
-        lda ($10),y
-        sta 4000 + \2 * 3
-        iny
-.next
-
-.endm
-
-rem
