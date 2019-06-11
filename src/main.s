@@ -13,6 +13,9 @@
 
         logo_data = $2800
 
+
+
+
         * = $0801
 
         .word (+), 2019
@@ -60,11 +63,11 @@ start
         lda #$1b
         sta $d011
 
-        lda #$06
+        lda #$0c
         sta $d025
-        lda #$03
+        lda #$00        ; bg color
         sta $d026
-        lda #$0e
+        lda #$0b
         sta $d02b
         sta $d02c
         sta $d02d
@@ -131,14 +134,14 @@ irq2
         sta $d018       ; 4
         lda #$18        ; 2
         sta $d016       ; 4
-        lda #$06        ; 2
+        lda #$0c        ; 2
         sta $d022       ; 4
-        lda #$0e        ; 2
+        lda #$0b        ; 2
         sta $d023       ; 4
                         ; = 24
 
         jsr open_border
-        lda #$0c
+        lda #$06
         sta $d020
         lda #$00
         sta $d021
@@ -229,7 +232,7 @@ setup
         bpl -
 
         ldx #$00
-        lda #$0b
+        lda #$08
 -       sta $d800,x
         inx
         cpx #40*5
@@ -264,8 +267,6 @@ setup
 
         .align 256
 open_border
-        lda #$10
-        ldx #$18
 ;         jsr ob_normal_debug     ; not needed
         ; waste 54 cycles
         ldy #12 ; 2
@@ -277,10 +278,17 @@ open_border
         ;nop
         ;bit $ea
         ;jsr ob_pre_badline_debug        ; 55 cycles + 6 for JSR
-        ldy #12 ;2
+        ldy #10 ;2
 -       dey
         bne -   ; 11 * 5 + 4
 
+        nop
+        nop
+        lda #$0f        ; 2
+        sta $d021       ; 4
+
+        lda #$10
+        ldx #$18
         jsr ob_pre_badline
         jsr ob_normal
         jsr ob_normal

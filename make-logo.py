@@ -65,7 +65,7 @@ class LogoConverter(object):
         self.dst_bitmap = bytearray(self.DST_WIDTH_BITMAP * self.DST_HEIGHT_CHARS)
         self.dst_charset = bytearray(0x800)
         self.dst_screen = bytearray(0x3e8)
-        self.dst_sprites = bytearray(4 * 2 * 64)
+        self.dst_sprites = bytearray([0xff] * (4 * 2 * 64))
 
         if self.debug:
             print("Converting 'Not Worthy' font:")
@@ -144,6 +144,7 @@ class LogoConverter(object):
         """
 
         total = 1   # make $00/'@' empty
+        self.dst_charset[0:8] = [0xff] * 8
 
         for ch in range(self.DST_WIDTH_CHARS * self.DST_HEIGHT_CHARS):
             if self.debug:
@@ -215,11 +216,15 @@ class LogoConverter(object):
 
         self.write_prg_file('data/nw-wwe-sprites.prg', self.dst_sprites, 0x2000)
 
+    def invert_bitmap(self):
+        self.src_bitmap = [b ^ 0xff for b in self.src_bitmap]
+
 
     def convert(self):
         """
         Run all conversion steps
         """
+        self.invert_bitmap()
         self.reduce_bitmap()
         self.create_charset()
         self.create_sprites()
