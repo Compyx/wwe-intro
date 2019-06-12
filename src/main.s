@@ -6,10 +6,10 @@
 
         SID_LOAD = $1000
         SID_INIT = $1000
-        ;SID_PLAY = $1003
-        ;SID_NAME = "Beatbassie.sid"
-        SID_PLAY = $1006
-        SID_NAME = "Cant_Stop.sid"
+        SID_PLAY = $1003
+        SID_NAME = "Beatbassie.sid"
+        ;SID_PLAY = $1006
+        ;SID_NAME = "Cant_Stop.sid"
 
         logo_data = $2800
 
@@ -175,6 +175,11 @@ irq3
         inc $d020
         lda #$13
         sta $d011
+        lda #$02
+        sta $d020
+        sta $d021
+        lda #0
+        sta $3fff
         ldx #$50
 -       dex
         bpl -
@@ -185,8 +190,23 @@ irq3
 ;        jsr scroll
         inc $d020
 
-        lda #$0c
+
+
+        lda #0
+        ldx #<irq4
+        ldy #>irq4
+        jmp do_irq
+
+irq4
+        pha
+        txa
+        pha
+        tya
+        pha
+
+        lda #$06
         sta $d020
+        sta $d021
 
         lda #TOP_RASTER
         ldx #<irq1
@@ -274,7 +294,6 @@ open_border
 -       dey     ; 2
         bne -   ; 3 / 2 last iter
 
-        nop     ; 2
         ;nop
         ;bit $ea
         ;jsr ob_pre_badline_debug        ; 55 cycles + 6 for JSR
@@ -282,14 +301,33 @@ open_border
 -       dey
         bne -   ; 11 * 5 + 4
 
-        nop
-        nop
-        lda #$0f        ; 2
-        sta $d021       ; 4
+        lda #$ff
+        sta $3fff
+        lda #$18      ; 2
+        sta $d016       ; 4
 
         lda #$10
         ldx #$18
-        jsr ob_pre_badline
+
+
+        ;jsr ob_pre_badline
+
+        lda #$0f
+        nop
+        nop
+        ldy #5
+-       dey
+        bne -
+        sta $d021
+        lda #$10
+        sta $d016
+        stx $d016
+        sta $d016,y     ; add 1 cycle to get 9
+        stx $d016
+        nop
+        nop
+        nop
+
         jsr ob_normal
         jsr ob_normal
         jsr ob_normal
