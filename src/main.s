@@ -141,14 +141,14 @@ irq2
                         ; = 24
 
         jsr open_border
-        lda #$06
-        sta $d020
-        lda #$00
-        sta $d021
+        ;lda #$06
+        ;sta $d020
+       ; lda #$00
+       ; sta $d021
 
-        dec $d020
+;        dec $d020
         jsr SID_PLAY
-        inc $d020
+;        inc $d020
 
         lda #$fa
         ldx #<irq3
@@ -250,6 +250,19 @@ setup
 -       sta $0340,x
         dex
         bpl -
+
+        ldx #0
+        txa
+-
+  .for p = 0, p < 4, p += 1
+        lda #$00
+        sta $0400 + p * 256,x
+        lda #$08 + 6
+        sta $d800 + p * 256,x
+  .next
+        inx
+        bne -
+
 
         ldx #$00
         lda #$08
@@ -387,8 +400,7 @@ open_border
         nop
         sta $d016
         stx $d016
-        nop
-        nop
+        sty $3fff
         nop     ; +6 for RTS
 
 
@@ -412,9 +424,21 @@ open_border
         jsr ob_normal
         jsr ob_normal
         jsr ob_normal
-        jsr ob_normal
-        rts
+        ;jsr ob_normal
 
+        lda #$06
+        sta $d021
+        sta $d020
+        ldy #5
+-       dey
+        bne -
+        lda #$10
+        sta $d016
+        stx $d016
+        lda #$06
+        lda $d021
+        rts
+.align $40
 ob_normal_debug
         ldy #5          ; 2
 -       dey             ; 2
@@ -429,7 +453,7 @@ ob_normal_debug
         rts             ; 6
                         ;----
                         ; 46
-
+.align $40
 ob_normal
         ; jsr = 6
         ldy #5
