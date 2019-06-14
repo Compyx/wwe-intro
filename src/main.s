@@ -297,14 +297,23 @@ open_border
         ;nop
         ;bit $ea
         ;jsr ob_pre_badline_debug        ; 55 cycles + 6 for JSR
-        ldy #10 ;2
+        ldy #8 ;2
 -       dey
         bne -   ; 11 * 5 + 4
 
-        lda #$ff
-        sta $3fff
+        nop
+        nop
+
         lda #$18      ; 2
         sta $d016       ; 4
+
+
+        lda #$ff
+        sta $3fff
+        lda #$00
+        sta $d020
+
+
 
         lda #$10
         ldx #$18
