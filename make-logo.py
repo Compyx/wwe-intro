@@ -48,8 +48,13 @@ class LogoConverter(object):
     }
 
     SPR_XPOS = [0x00, 0x01, 0x02, 0x40, 0x41, 0x42, 0x80, 0x81, 0x82,
-                0xc0, 0xc1, 0xc2
-    ]
+                0xc0, 0xc1, 0xc2,
+                0x200, 0x201, 0x202, 0x240, 0x241, 0x242, 0x280, 0x281, 0x282,
+                0x2c0, 0x2c1, 0x2c2]
+
+
+
+
 
 
     def __init__(self, debug=True):
@@ -65,7 +70,7 @@ class LogoConverter(object):
         self.dst_bitmap = bytearray(self.DST_WIDTH_BITMAP * self.DST_HEIGHT_CHARS)
         self.dst_charset = bytearray(0x800)
         self.dst_screen = bytearray(0x3e8)
-        self.dst_sprites = bytearray([0xff] * (4 * 2 * 64))
+        self.dst_sprites = bytearray([0xff] * (4 * 2 * 64*2))
 
         if self.debug:
             print("Converting 'Not Worthy' font:")
@@ -211,7 +216,10 @@ class LogoConverter(object):
         """
 
         for s, d in [(40, 2), (41, 3), (42,4), (43, 5),
-                     (5, 6), (6, 7), (7, 8), (8, 9)]:
+                     (5, 6), (6, 7), (7, 8), (8, 9),
+
+                     (5, 3 + 12), (6, 4 + 12), (7, 5 + 12),
+                     (7, 6 + 12), (8, 7+ 12)]:
             self.copy_sprite_column(s, d)
 
 
@@ -220,6 +228,7 @@ class LogoConverter(object):
             for y in range(20,21):
                 offset = self.SPR_XPOS[x] + y * 3 + 0x100
                 self.dst_sprites[offset] = 0
+                self.dst_sprites[offset + 0x200] = 0
 
         self.write_prg_file('data/nw-wwe-sprites.prg', self.dst_sprites, 0x2000)
 

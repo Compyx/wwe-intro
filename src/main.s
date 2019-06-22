@@ -150,6 +150,29 @@ irq2
         jsr SID_PLAY
 ;        inc $d020
 
+
+
+        lda #$fa - 8 * 5 - 2
+        ldx #<irq2a
+        ldy #>irq2a
+        jmp do_irq
+
+irq2a
+        pha
+        txa
+        pha
+        tya
+        pha
+        lda #$02
+        sta $d020
+        sta $d021
+        lda #$18
+        sta $d018
+        lda #$18
+        sta $d016
+        jsr open_border_low
+
+
         lda #$fa
         ldx #<irq3
         ldy #>irq3
@@ -180,7 +203,7 @@ irq3
         sta $d021
         lda #0
         sta $3fff
-        ldx #$50
+        ldx #$30
 -       dex
         bpl -
         dec $d020
@@ -192,7 +215,7 @@ irq3
 
 
 
-        lda #0
+        lda #$10
         ldx #<irq4
         ldy #>irq4
         jmp do_irq
@@ -207,6 +230,18 @@ irq4
         lda #$06
         sta $d020
         sta $d021
+        lda #$0c
+        sta $d025
+        lda #$00        ; bg color
+        sta $d026
+        lda #$0b
+        sta $d02b
+        sta $d02c
+        sta $d02d
+        sta $d02e
+        lda #$f0
+        sta $d01c
+
 
         lda #TOP_RASTER
         ldx #<irq1
@@ -230,7 +265,7 @@ set_upper_sprites
 thirdx  lda #$70
         sta $d00e
 
-        ldx #$c0
+        ldx #$c8
         stx $07fc
         inx
         stx $07fd
@@ -283,18 +318,21 @@ setup
 
         ; convert charset to logo
         jsr make_logo
+        ;jsr make_logo_low
 
-        ; put world wide on scren
+        ; put 'expressive' on screen
 
         ldx #$00
 -
   .for row = 0, row < 5, row += 1
-        lda logo_data + row * 128 + 4,x
+        lda logo_data + row * 128 + 5 + 48,x    ; remove + 5 + 48 for 'world wide'
         sta $0400 + row * $28,x
   .next
         inx
         cpx #$28
         bne -
+
+
         rts
 
 
@@ -381,7 +419,7 @@ open_border
         ; -JSR = -6
 
         ; 6*4  = +24
-        ldy #$c4
+        ldy #$cc
         sty $07fc
         iny
         sty $07fd
@@ -438,6 +476,37 @@ open_border
         lda #$06
         lda $d021
         rts
+
+
+
+open_border_low .proc
+
+        lda #$f0
+        sta $d015
+        lda #%1101000
+        sta $d03f
+        lda #$fa - 8 * 5 - 1
+        sta $d009
+        sta $d00b
+        sta $d00b
+        sta $d00f
+        ldx #($3000/64)
+        stx $07fc
+        inx
+        stx $07fd
+        inx
+        stx $07fe
+        inx
+        stx $07ff
+        dec $d020
+        nop
+        nop
+        nop
+        inc $d020
+
+        rts
+.pend
+
 .align $40
 ob_normal_debug
         ldy #5          ; 2
@@ -555,6 +624,68 @@ more
         bcc more
         rts
 .pend
+
+make_logo_low .proc
+        letter = ZP     ; index in the 'world wide expressive' "string"
+        screen = ZP + 1 ; offset in 'screen'
+        offset = ZP + 2 ; offset in source
+        width = ZP + 3  ; width of letter
+        tmp = ZP + 4    ; tmp width or so
+        row = ZP + 5    ; row index
+        letter_index = ZP + 6
+
+
+        lda #9
+        sta letter
+        lda #0
+        sta offset
+        sta row
+
+more
+        ; get letter data
+        lda letter
+        asl
+        tax
+        lda letter_offsets,x
+        sta letter_index
+        lda letter_offsets + 1,x
+        ; sta screen
+        tay
+
+        ; handle letter index
+        lda letter_index
+        asl
+        tax
+;        lda letter_data,x
+;        sta offset
+        lda letter_data + 1,x
+        sta width
+        lda letter_data,x
+        tax
+
+        ; copy to dest
+        ; ldy screen
+        ; ldx offset
+-
+  .for rw = 0, rw < 5, rw += 1
+        lda screen_data + rw * 54,x
+        sta logo_data + $0200 + rw * 128,y
+  .next
+        inx
+        iny
+        dec width
+        bne -
+
+        sty screen
+
+        inc letter
+
+        lda letter
+        cmp #((letter_offsets_end - letter_offsets) / 2) + 12
+        bcc more
+        rts
+.pend
+
 
 
         rts
