@@ -31,6 +31,12 @@
         .null $9e, format("%d", start)
 +       .word 0
 
+
+logo_col_low    .byte $06
+logo_col_mid    .byte $0e
+logo_col_hi     .byte $03
+
+
 start
         jsr $fda3
         jsr $fd15
@@ -72,11 +78,11 @@ start
         lda #$1b
         sta $d011
 
-        lda #COLOR_MID
+        lda logo_col_mid
         sta $d025
         lda #$00        ; bg color
         sta $d026
-        lda #COLOR_LOW
+        lda logo_col_low
         sta $d02b
         sta $d02c
         sta $d02d
@@ -128,24 +134,22 @@ irq2
 +
         jsr set_upper_sprites
 
-        ldy #12
+        ldy #10
 -       dey             ; 11 *5 + 4 = 59
         bne -
-;        nop
 
-;        ldx #4
-;-       dex
-;        bpl -
-;        nop
-;;         nop
-;         nop
+        nop
+        nop
+        bit $ea
+
+
         lda #$18        ; 2
         sta $d018       ; 4
         lda #$18        ; 2
         sta $d016       ; 4
-        lda #COLOR_MID  ; 2
+        lda logo_col_mid  ; 4
         sta $d022       ; 4
-        lda #COLOR_LOW  ; 2
+        lda logo_col_low  ; 4
         sta $d023       ; 4
                         ; = 24
 
@@ -207,11 +211,11 @@ irq4
         lda #$06
         sta $d020
         sta $d021
-        lda #COLOR_MID
+        lda logo_col_mid
         sta $d025
         lda #$00        ; bg color
         sta $d026
-        lda #COLOR_LOW
+        lda logo_col_low
         sta $d02b
         sta $d02c
         sta $d02d
@@ -359,8 +363,7 @@ open_border
 
         ;jsr ob_pre_badline
 
-        lda #COLOR_HI
-        nop
+        lda logo_col_hi
         nop
         ldy #5
 -       dey
@@ -726,6 +729,15 @@ delay   lda #FLIP_DELAY
   .next
         dex
         bpl -
+
+        ; set colors
+        lda #$02
+        ldx #$0a
+        ldy #$07
+        sta logo_col_low
+        stx logo_col_mid
+        sty logo_col_hi
+
         rts
 expressive
         ldx #39
@@ -736,7 +748,15 @@ expressive
   .next
         dex
         bpl -
+        ; set colors
+        lda #$09
+        ldx #$05
+        ldy #$0d
+        sta logo_col_low
+        stx logo_col_mid
+        sty logo_col_hi
         rts
+
 .pend
 
         * = SID_LOAD
