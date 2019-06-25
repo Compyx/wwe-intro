@@ -1,15 +1,24 @@
 ; vim: set et ts=8 sw=8 sts=8 fdm=marker syntax=64tass:
 
+
+        ; 0 = "world wide", 1 = "expressive"
+
+        COLOR_LOW = $06
+        COLOR_MID = $0e
+        COLOR_HI  = $03
+
+        FLIP_DELAY = $50
+
         TOP_RASTER = $2b
 
         ZP = $02
 
         SID_LOAD = $1000
         SID_INIT = $1000
-        SID_PLAY = $1003
-        SID_NAME = "Beatbassie.sid"
-        ;SID_PLAY = $1006
-        ;SID_NAME = "Cant_Stop.sid"
+        ;SID_PLAY = $1003
+        ;SID_NAME = "Beatbassie.sid"
+        SID_PLAY = $1006
+        SID_NAME = "Cant_Stop.sid"
 
         logo_data = $2800
 
@@ -28,7 +37,7 @@ start
         jsr $ff5b
         jsr setup
         lda #0
-        jsr $1000
+        jsr SID_INIT
         sei
         lda #$35
         sta $01
@@ -38,7 +47,7 @@ start
         ldx #0
         stx $dc0e
         stx $dd0e
-        stx $3fff
+        stx $3fff       ; Warning: store old $3fff if intro is shorter
         inx
         stx $d01a
 
@@ -63,11 +72,11 @@ start
         lda #$1b
         sta $d011
 
-        lda #$0c
+        lda #COLOR_MID
         sta $d025
         lda #$00        ; bg color
         sta $d026
-        lda #$0b
+        lda #COLOR_LOW
         sta $d02b
         sta $d02c
         sta $d02d
@@ -122,21 +131,21 @@ irq2
         ldy #12
 -       dey             ; 11 *5 + 4 = 59
         bne -
-        nop
+;        nop
 
 ;        ldx #4
 ;-       dex
 ;        bpl -
 ;        nop
-         nop
-         nop
+;;         nop
+;         nop
         lda #$18        ; 2
         sta $d018       ; 4
         lda #$18        ; 2
         sta $d016       ; 4
-        lda #$0c        ; 2
+        lda #COLOR_MID  ; 2
         sta $d022       ; 4
-        lda #$0b        ; 2
+        lda #COLOR_LOW  ; 2
         sta $d023       ; 4
                         ; = 24
 
@@ -146,48 +155,16 @@ irq2
        ; lda #$00
        ; sta $d021
 
-;        dec $d020
+        dec $d020
         jsr SID_PLAY
-;        inc $d020
+        inc $d020
 
-
-
-        lda #$fa - 8 * 5 - 2
-        ldx #<irq2a
-        ldy #>irq2a
-        jmp do_irq
-
-irq2a
-        pha
-        txa
-        pha
-        tya
-        pha
-        lda #$02
-        sta $d020
-        sta $d021
-        lda #$18
-        sta $d018
-        lda #$18
-        sta $d016
-        jsr open_border_low
 
 
         lda #$fa
         ldx #<irq3
         ldy #>irq3
-do_irq
-        sta $d012
-        stx $fffe
-        sty $ffff
-        inc $d019
-        pla
-        tay
-        pla
-        tax
-        pla
-nmi     rti
-
+        jmp do_irq
 
 irq3
         pha
@@ -210,7 +187,7 @@ irq3
         lda #$1b
         sta $d011
         inc $d020
-;        jsr scroll
+        jsr flip_logo
         inc $d020
 
 
@@ -230,11 +207,11 @@ irq4
         lda #$06
         sta $d020
         sta $d021
-        lda #$0c
+        lda #COLOR_MID
         sta $d025
         lda #$00        ; bg color
         sta $d026
-        lda #$0b
+        lda #COLOR_LOW
         sta $d02b
         sta $d02c
         sta $d02d
@@ -246,7 +223,18 @@ irq4
         lda #TOP_RASTER
         ldx #<irq1
         ldy #>irq1
-        jmp do_irq
+do_irq
+        sta $d012
+        stx $fffe
+        sty $ffff
+        inc $d019
+        pla
+        tay
+        pla
+        tax
+        pla
+nmi     rti
+
 
 
 set_upper_sprites
@@ -255,17 +243,19 @@ set_upper_sprites
         sta $d00b
         sta $d00d
         sta $d00f
-
-        lda #$e0
-        sta $d008
         lda #$00
+        sta $d01d
+xpos0   lda #$e0
+        sta $d008
+xpos1   lda #$00
         sta $d00a
-        lda #$58
+xpos2   lda #$58
         sta $d00c
-thirdx  lda #$70
+xpos3   lda #$70
         sta $d00e
 
-        ldx #$c8
+sprptr0 ldx #$c0                ; lowest sprite pointer:
+                                ; $C0 = WORLD WIDE, $C8: EXPRESSIVE
         stx $07fc
         inx
         stx $07fd
@@ -318,14 +308,13 @@ setup
 
         ; convert charset to logo
         jsr make_logo
-        ;jsr make_logo_low
 
         ; put 'expressive' on screen
 
         ldx #$00
 -
   .for row = 0, row < 5, row += 1
-        lda logo_data + row * 128 + 5 + 48,x    ; remove + 5 + 48 for 'world wide'
+        lda logo_data + row * 128 + 4,x
         sta $0400 + row * $28,x
   .next
         inx
@@ -365,14 +354,12 @@ open_border
         sta $d020
 
 
-
         lda #$10
         ldx #$18
 
-
         ;jsr ob_pre_badline
 
-        lda #$0f
+        lda #COLOR_HI
         nop
         nop
         ldy #5
@@ -419,7 +406,8 @@ open_border
         ; -JSR = -6
 
         ; 6*4  = +24
-        ldy #$cc
+
+sprptr1 ldy #$c4
         sty $07fc
         iny
         sty $07fd
@@ -478,34 +466,6 @@ open_border
         rts
 
 
-
-open_border_low .proc
-
-        lda #$f0
-        sta $d015
-        lda #%1101000
-        sta $d03f
-        lda #$fa - 8 * 5 - 1
-        sta $d009
-        sta $d00b
-        sta $d00b
-        sta $d00f
-        ldx #($3000/64)
-        stx $07fc
-        inx
-        stx $07fd
-        inx
-        stx $07fe
-        inx
-        stx $07ff
-        dec $d020
-        nop
-        nop
-        nop
-        inc $d020
-
-        rts
-.pend
 
 .align $40
 ob_normal_debug
@@ -729,6 +689,55 @@ letter_offsets  ; letter, offset
 letter_offsets_end
 
 
+logo_index      .byte 0
+
+flip_logo .proc
+delay   lda #FLIP_DELAY
+        beq +
+        dec delay + 1
+        rts
++
+        lda #FLIP_DELAY
+        sta delay + 1
+
+        lda logo_index
+        eor #1
+        sta logo_index
+
+        ; sprite pointers
+        lda logo_index
+        asl
+        asl
+        asl
+        adc #$c0
+        sta sprptr0 + 1
+        adc #$04
+        sta sprptr1 + 1
+
+        ; XXX: do this with $d018 switching
+        lda logo_index
+        bne expressive
+
+        ldx #39
+-
+  .for row = 0, row < 5, row += 1
+        lda logo_data + row * 128 + 4,x
+        sta $0400 + row * 40,x
+  .next
+        dex
+        bpl -
+        rts
+expressive
+        ldx #39
+-
+  .for row = 0, row < 5, row += 1
+        lda logo_data + row * 128 + 4 +1 + 48,x
+        sta $0400 + row * 40,x
+  .next
+        dex
+        bpl -
+        rts
+.pend
 
         * = SID_LOAD
 .binary format("../%s", SID_NAME), $7e

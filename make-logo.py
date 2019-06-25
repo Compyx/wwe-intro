@@ -223,13 +223,12 @@ class LogoConverter(object):
             self.copy_sprite_column(s, d)
 
 
-        # remove data
+        # fix up data to allow for proper raster split
         for x in range(6):
             for y in range(20,21):
                 offset = self.SPR_XPOS[x] + y * 3 + 0x100
                 self.dst_sprites[offset] = 0
                 self.dst_sprites[offset + 0x200] = 0
-
         self.write_prg_file('data/nw-wwe-sprites.prg', self.dst_sprites, 0x2000)
 
     def invert_bitmap(self):
