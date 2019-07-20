@@ -15,10 +15,10 @@
 
         SID_LOAD = $1000
         SID_INIT = $1000
-        ;SID_PLAY = $1003
-        ;SID_NAME = "Beatbassie.sid"
-        SID_PLAY = $1006
-        SID_NAME = "Cant_Stop.sid"
+        SID_PLAY = $1003
+        SID_NAME = "Beatbassie.sid"
+        ;SID_PLAY = $1006
+        ;SID_NAME = "Cant_Stop.sid"
 
         logo_data = $2800
 
@@ -222,6 +222,8 @@ irq4
         sta $d02e
         lda #$f0
         sta $d01c
+
+        jsr fade_in
 
 
         lda #TOP_RASTER
@@ -758,6 +760,61 @@ expressive
         rts
 
 .pend
+
+
+
+fade_in .proc
+delay   lda #3
+        beq ok
+        dec delay + 1
+        rts
+ok      lda #3
+        sta delay + 1
+
+index   lda #0
+        sta add_1 + 1
+        clc
+        asl
+add_1   adc #0
+        tax
+
+        cpx #fade_in_table_end - fade_in_table
+        bcc +
+        ldx #0
+        stx index + 1
+        lda #$ff
+        sta delay + 1
+        rts
++
+
+        lda fade_in_table + 0,x
+        sta logo_col_low
+        lda fade_in_table + 1,x
+        sta logo_col_mid
+        lda fade_in_table + 2,x
+        sta logo_col_hi
+        inc index + 1
+        rts
+.pend
+
+
+fade_in_table
+        ;blue
+        .byte $00, $00, $00
+        .byte $00, $00, $06
+        .byte $00, $06, $04
+        .byte $06, $04, $0e
+        .byte $04, $0e, $03
+        .byte $0e, $03, $01
+        .byte $03, $01, $01
+        .byte $03, $01, $01
+        .byte $0e, $03, $01
+        .byte $04, $0e, $03
+        .byte $06, $0e, $03
+        .byte $06, $04, $0e
+        .byte $00, $00, $00
+fade_in_table_end
+
 
         * = SID_LOAD
 .binary format("../%s", SID_NAME), $7e
