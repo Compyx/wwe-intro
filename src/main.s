@@ -15,10 +15,10 @@
 
         SID_LOAD = $1000
         SID_INIT = $1000
-        SID_PLAY = $1003
-        SID_NAME = "Beatbassie.sid"
-        ;SID_PLAY = $1006
-        ;SID_NAME = "Cant_Stop.sid"
+        ;SID_PLAY = $1003
+        ;SID_NAME = "Beatbassie.sid"
+        SID_PLAY = $1006
+        SID_NAME = "Cant_Stop.sid"
 
         logo_data = $2800
 
@@ -135,13 +135,11 @@ irq2
         jsr set_upper_sprites
 
         ldy #10
--       dey             ; 11 *5 + 4 = 59
+-       dey
         bne -
-
         nop
         nop
         bit $ea
-
 
         lda #$18        ; 2
         sta $d018       ; 4
@@ -152,7 +150,6 @@ irq2
         lda logo_col_low  ; 4
         sta $d023       ; 4
                         ; = 24
-
         jsr open_border
         ;lda #$06
         ;sta $d020
@@ -335,19 +332,23 @@ setup
 open_border
 ;         jsr ob_normal_debug     ; not needed
         ; waste 54 cycles
-        ldy #12 ; 2
+        ldy #10 ; 2
 
 -       dey     ; 2
         bne -   ; 3 / 2 last iter
-
+        nop
+        nop
+        lda #1
+        sta $d020
+        sta $d021
         ;nop
         ;bit $ea
         ;jsr ob_pre_badline_debug        ; 55 cycles + 6 for JSR
-        ldy #8 ;2
+        ldy #7 ;2
 -       dey
         bne -   ; 11 * 5 + 4
 
-        nop
+        bit $ea
         nop
 
         lda #$18      ; 2
