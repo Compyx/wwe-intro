@@ -1,4 +1,4 @@
-; vim: set et ts=8 sw=8 sts=8 fdm=marker syntax=64tass:
+; vim: set et ts=8 sw=8 sts=8 fdm=marker syntax=64tass smartindent:
 
 
         ; 0 = "world wide", 1 = "expressive"
@@ -141,7 +141,7 @@ irq2
         nop
         bit $ea
 
-        lda #$18        ; 2
+screenptr lda #$d8        ; 2
         sta $d018       ; 4
         lda #$18        ; 2
         sta $d016       ; 4
@@ -151,10 +151,10 @@ irq2
         sta $d023       ; 4
                         ; = 24
         jsr open_border
-        ;lda #$06
-        ;sta $d020
-       ; lda #$00
-       ; sta $d021
+        lda #$06
+        sta $d020
+        lda #$00
+        sta $d021
 
         dec $d020
         jsr SID_PLAY
@@ -188,7 +188,8 @@ irq3
         lda #$1b
         sta $d011
         inc $d020
-        jsr flip_logo
+
+        jsr fade_in
         inc $d020
 
 
@@ -220,7 +221,6 @@ irq4
         lda #$f0
         sta $d01c
 
-        jsr fade_in
 
 
         lda #TOP_RASTER
@@ -259,13 +259,13 @@ xpos3   lda #$70
 
 sprptr0 ldx #$c0                ; lowest sprite pointer:
                                 ; $C0 = WORLD WIDE, $C8: EXPRESSIVE
-        stx $07fc
+sptr0   stx $07fc
         inx
-        stx $07fd
+sptr1   stx $07fd
         inx
-        stx $07fe
+sptr2   stx $07fe
         inx
-        stx $07ff
+sptr3   stx $07ff
         lda #$f0
         sta $d015
         lda #%11010000
@@ -282,22 +282,19 @@ setup
         ldx #0
         txa
 -
-  .for p = 0, p < 4, p += 1
-        lda #$00
-        sta $0400 + p * 256,x
-        lda #$08 + 6
-        sta $d800 + p * 256,x
-  .next
-        inx
-        bne -
-
-
-        ldx #$00
+        sta $0400,x
         lda #$08
--       sta $d800,x
+        sta $d800,x
         inx
-        cpx #40*5
+        cpx #200
         bne -
+
+;        ldx #$00
+;        lda #$08
+;-       sta $d800,x
+;        inx
+;        cpx #40*5
+;        bne -
 
         ldx #$02
         stx $d02b
@@ -309,11 +306,6 @@ setup
         ldx #$06        ; 6 -> e
         stx $d02e
 
-        ; convert charset to logo
-        jsr make_logo
-
-        ; put 'expressive' on screen
-
         ldx #$00
 -
   .for row = 0, row < 5, row += 1
@@ -323,8 +315,6 @@ setup
         inx
         cpx #$28
         bne -
-
-
         rts
 
 
@@ -409,18 +399,15 @@ open_border
 
         jsr ob_normal
 
-        ; -JSR = -6
-
-        ; 6*4  = +24
 
 sprptr1 ldy #$c4
-        sty $07fc
+sptr4   sty $07fc
         iny
-        sty $07fd
+sptr5   sty $07fd
         iny
-        sty $07fe
+sptr6   sty $07fe
         iny
-        sty $07ff
+sptr7   sty $07ff
 
         nop     ; +6 for JSR
         nop
@@ -458,17 +445,32 @@ sprptr1 ldy #$c4
         jsr ob_normal
         ;jsr ob_normal
 
-        lda #$06
-        sta $d021
-        sta $d020
+        lda #$01
+        sta $d03f
+        sta $d03f
+
         ldy #5
 -       dey
         bne -
         lda #$10
         sta $d016
         stx $d016
-        lda #$06
-        lda $d021
+        nop
+        nop
+        nop
+        lda #$07
+        sta $d020
+        sta $d021
+        lda #$15
+        sta $d018
+ 
+        ldy #8
+-       dey
+        bne -
+
+        lda #$00
+        lda $d020
+        sta $d021
         rts
 
 
@@ -531,181 +533,11 @@ ob_pre_badline_debug    ; fix this
                         ; = 
 
 
-make_logo .proc
-        letter = ZP     ; index in the 'world wide expressive' "string"
-        screen = ZP + 1 ; offset in 'screen'
-        offset = ZP + 2 ; offset in source
-        width = ZP + 3  ; width of letter
-        tmp = ZP + 4    ; tmp width or so
-        row = ZP + 5    ; row index
-        letter_index = ZP + 6
-
-
-        lda #0
-        sta letter
-        sta offset
-        sta row
-
-more
-        ; get letter data
-        lda letter
-        asl
-        tax
-        lda letter_offsets,x
-        sta letter_index
-        lda letter_offsets + 1,x
-        ; sta screen
-        tay
-
-        ; handle letter index
-        lda letter_index
-        asl
-        tax
-;        lda letter_data,x
-;        sta offset
-        lda letter_data + 1,x
-        sta width
-        lda letter_data,x
-        tax
-
-        ; copy to dest
-        ; ldy screen
-        ; ldx offset
--
-  .for rw = 0, rw < 5, rw += 1
-        lda screen_data + rw * 54,x
-        sta logo_data + rw * 128,y
-  .next
-        inx
-        iny
-        dec width
-        bne -
-
-        sty screen
-
-        inc letter
-
-        lda letter
-        cmp #((letter_offsets_end - letter_offsets) / 2)
-        bcc more
-        rts
-.pend
-
-make_logo_low .proc
-        letter = ZP     ; index in the 'world wide expressive' "string"
-        screen = ZP + 1 ; offset in 'screen'
-        offset = ZP + 2 ; offset in source
-        width = ZP + 3  ; width of letter
-        tmp = ZP + 4    ; tmp width or so
-        row = ZP + 5    ; row index
-        letter_index = ZP + 6
-
-
-        lda #9
-        sta letter
-        lda #0
-        sta offset
-        sta row
-
-more
-        ; get letter data
-        lda letter
-        asl
-        tax
-        lda letter_offsets,x
-        sta letter_index
-        lda letter_offsets + 1,x
-        ; sta screen
-        tay
-
-        ; handle letter index
-        lda letter_index
-        asl
-        tax
-;        lda letter_data,x
-;        sta offset
-        lda letter_data + 1,x
-        sta width
-        lda letter_data,x
-        tax
-
-        ; copy to dest
-        ; ldy screen
-        ; ldx offset
--
-  .for rw = 0, rw < 5, rw += 1
-        lda screen_data + rw * 54,x
-        sta logo_data + $0200 + rw * 128,y
-  .next
-        inx
-        iny
-        dec width
-        bne -
-
-        sty screen
-
-        inc letter
-
-        lda letter
-        cmp #((letter_offsets_end - letter_offsets) / 2) + 12
-        bcc more
-        rts
-.pend
-
-
-
-        rts
-
-
-letter_data     ; offset, width
-        .byte 0, 5      ;  0 = d
-        .byte 5, 4      ;  1 = e
-        .byte 9, 2      ;  2 = i
-        .byte 11, 4     ;  3 = l
-        .byte 15, 5     ;  4 = o
-        .byte 20, 5     ;  5 = p
-        .byte 25, 5     ;  6 = r
-        .byte 30, 5     ;  7 = s
-        .byte 35, 5     ;  8 = v
-        .byte 40, 8     ;  9 = w
-        .byte 48, 6     ; 10 = x
-
-letter_offsets  ; letter, offset
-        .byte 9, 0      ; w
-        .byte 4, 8      ; o
-        .byte 6, 13     ; r
-        .byte 3, 18     ; l
-        .byte 0, 22     ; d
-        ; space
-        .byte 9, 29     ; w
-        .byte 2, 37     ; i
-        .byte 0, 39     ; d
-        .byte 1, 44     ; e
-        ; space
-        .byte 1, 50     ; e
-        .byte 10, 54    ; x
-        .byte 5, 60     ; p
-        .byte 6, 65     ; r
-        .byte 1, 70     ; e
-        .byte 7, 74     ; s
-        .byte 7, 79     ; s
-        .byte 2, 84     ; i
-        .byte 8, 86     ; v
-        .byte 1, 91     ; e
-letter_offsets_end
 
 
 logo_index      .byte 0
 
 flip_logo .proc
-delay   lda #FLIP_DELAY
-        beq +
-        dec delay + 1
-        rts
-+
-        lda #FLIP_DELAY
-        sta delay + 1
-
         lda logo_index
         eor #1
         sta logo_index
@@ -724,33 +556,35 @@ delay   lda #FLIP_DELAY
         lda logo_index
         bne expressive
 
-        ldx #39
--
-  .for row = 0, row < 5, row += 1
-        lda logo_data + row * 128 + 4,x
-        sta $0400 + row * 40,x
-  .next
-        dex
-        bpl -
+        lda #$37
+        sta sptr0 + 2
+        sta sptr1 + 2
+        sta sptr2 + 2
+        sta sptr3 + 2
+        sta sptr4 + 2
+        sta sptr5 + 2
+        sta sptr6 + 2
+        sta sptr7 + 2
 
-        ; set colors
-        lda #$02
-        ldx #$0a
-        ldy #$07
-        sta logo_col_low
-        stx logo_col_mid
-        sty logo_col_hi
+        lda #$d8
+        sta screenptr + 1
+        rts
+
+expressive
+        lda #$3b
+        sta sptr0 + 2
+        sta sptr1 + 2
+        sta sptr2 + 2
+        sta sptr3 + 2
+        sta sptr4 + 2
+        sta sptr5 + 2
+        sta sptr6 + 2
+        sta sptr7 + 2
+
+        lda #$e8
+        sta screenptr + 1
 
         rts
-expressive
-        ldx #39
--
-  .for row = 0, row < 5, row += 1
-        lda logo_data + row * 128 + 4 +1 + 48,x
-        sta $0400 + row * 40,x
-  .next
-        dex
-        bpl -
         ; set colors
         lda #$09
         ldx #$05
@@ -783,8 +617,9 @@ add_1   adc #0
         bcc +
         ldx #0
         stx index + 1
-        lda #$ff
+        lda #$10
         sta delay + 1
+        jsr flip_logo
         rts
 +
 
@@ -823,10 +658,6 @@ fade_in_table_end
 
 
 
-        * = $1c00
-screen_data
-.binary "../data/nw-wwe-font.screen.prg", 2
-
         * = $2000
 .binary "../data/nw-wwe-font.charset.prg", 2
 
@@ -834,3 +665,11 @@ screen_data
         * = $3000
 .binary "../data/nw-wwe-sprites.prg", 2
 
+
+        * = $3400
+worldwide_screen
+        .binary "../world-wide-screen.prg", 2
+
+        * = $3800
+expressive_screen
+        .binary "../expressive-screen.prg", 2
